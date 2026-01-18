@@ -14,7 +14,7 @@ Questions are generated dynamically with memory-based logic to avoid repetition.
 - Hosted using GitHub Pages
 
 ## Play the Game
-👉 https://joy-vincent393933.github.io/quiz-battle-ai/
+👉 https://joy-vincent393933.github.io/Quiz-Battle-AI/
 
 ## Tech Stack
 - HTML
