@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Quiz Battle – Procedural AI Edition</title>
+
+<style>
+/* ================= RESET ================= */
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+  font-family:"Segoe UI",system-ui,sans-serif;
+}
+
+/* ================= BACKGROUND ================= */
+body{
+  height:100vh;
+  overflow:hidden;
+  color:#fff;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(255,154,158,.85), transparent 45%),
+    radial-gradient(circle at 80% 30%, rgba(250,208,196,.85), transparent 45%),
+    radial-gradient(circle at 50% 80%, rgba(161,140,209,.85), transparent 45%),
+    linear-gradient(120deg,#141e30,#243b55);
+  background-size:220% 220%;
+  animation:bgMove 22s ease infinite;
+}
+
+@keyframes bgMove{
+  0%{background-position:0% 50%}
+  50%{background-position:100% 50%}
+  100%{background-position:0% 50%}
+}
+
+/* ================= SCENES ================= */
+.scene{
+  position:absolute;
+  inset:0;
+  padding:70px 50px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  text-align:center;
+  opacity:0;
+  transform:translateY(40px);
+  pointer-events:none;
+}
+
+.scene.active{
+  opacity:1;
+  transform:translateY(0);
+  pointer-events:auto;
+  animation:sceneIn 1.1s ease forwards;
+}
+
+@keyframes sceneIn{
+  from{opacity:0;transform:translateY(60px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* ================= TEXT ================= */
+h1{
+  font-size:64px;
+  margin-bottom:20px;
+  letter-spacing:2px;
+  text-shadow:0 0 70px gold;
+}
+
+h2{
+  font-size:40px;
+  margin-bottom:20px;
+}
+
+p{
+  font-size:18px;
+  max-width:900px;
+  line-height:1.8;
+  opacity:.92;
+  margin-bottom:16px;
+}
+
+/* ================= BUTTONS ================= */
+button{
+  margin-top:30px;
+  padding:16px 38px;
+  font-size:18px;
+  border-radius:40px;
+  border:none;
+  cursor:pointer;
+  background:linear-gradient(135deg,gold,orange);
+  color:#000;
+  box-shadow:0 18px 45px rgba(255,215,0,.55);
+  transition:.25s;
+}
+
+button:hover{
+  transform:translateY(-6px) scale(1.08);
+}
+
+/* ================= CARDS ================= */
+.cards{
+  display:flex;
+  gap:30px;
+  flex-wrap:wrap;
+  justify-content:center;
+  margin-top:40px;
+}
+
+.card{
+  width:240px;
+  padding:28px;
+  border-radius:28px;
+  background:rgba(255,255,255,.18);
+  backdrop-filter:blur(14px);
+  cursor:pointer;
+  transition:.3s;
+}
+
+.card:hover{
+  transform:translateY(-14px) scale(1.1);
+}
+
+/* ================= GAME UI ================= */
+.header{
+  position:absolute;
+  top:25px;
+  width:95%;
+  display:flex;
+  justify-content:space-between;
+  font-size:20px;
+}
+
+.options button{
+  display:block;
+  width:85%;
+  max-width:650px;
+  margin:18px auto;
+}
+
+.correct{background:limegreen!important}
+.wrong{background:crimson!important}
+</style>
+</head>
+
+<body>
+
+<!-- SPLASH -->
+<section class="scene active" id="splash">
+  <h1>INITIALIZING</h1>
+  <p>Loading procedural knowledge engine…</p>
+</section>
+
+<!-- INTRO -->
+<section class="scene" id="intro">
+  <h1>QUIZ BATTLE</h1>
+  <p>Procedurally generated quiz experience.</p>
+  <p>No fixed question lists. Every game is different.</p>
+  <button onclick="go('overview')">ENTER</button>
+</section>
+
+<!-- OVERVIEW -->
+<section class="scene" id="overview">
+  <h2>How This Works</h2>
+  <p>
+    This game uses rule-based procedural generation.
+    Questions are built from data + templates at runtime.
+  </p>
+  <p>
+    This is game AI (decision logic), not ChatGPT.
+  </p>
+  <button onclick="go('rules')">CONTINUE</button>
+</section>
+
+<!-- RULES -->
+<section class="scene" id="rules">
+  <h2>Rules</h2>
+  <p>• Each question has a time limit</p>
+  <p>• Wrong answers reduce lives</p>
+  <p>• Correct streaks multiply score</p>
+  <button onclick="go('how')">NEXT</button>
+</section>
+
+<!-- HOW -->
+<section class="scene" id="how">
+  <h2>How to Play</h2>
+  <p>
+    Choose difficulty → choose category → play.
+    The engine generates questions dynamically.
+  </p>
+  <button onclick="go('modes')">START</button>
+</section>
+
+<!-- MODES -->
+<section class="scene" id="modes">
+  <h2>Select Difficulty</h2>
+  <div class="cards">
+    <div class="card" onclick="setMode('beginner')">Beginner</div>
+    <div class="card" onclick="setMode('pro')">Pro</div>
+    <div class="card" onclick="setMode('master')">Master</div>
+  </div>
+</section>
+
+<!-- CATEGORIES -->
+<section class="scene" id="categories">
+  <h2>Select Category</h2>
+  <div class="cards">
+    <div class="card" onclick="startGame('tech')">💻 Technology</div>
+    <div class="card" onclick="startGame('gk')">🌍 General Knowledge</div>
+    <div class="card" onclick="startGame('science')">🔬 Science</div>
+    <div class="card" onclick="startGame('math')">➗ Mathematics</div>
+    <div class="card" onclick="startGame('history')">🏛 History</div>
+    <div class="card" onclick="startGame('geo')">🌐 Geography</div>
+    <div class="card" onclick="startGame('movies')">🎬 Movies</div>
+    <div class="card" onclick="startGame('music')">🎵 Music</div>
+    <div class="card" onclick="startGame('sports')">⚽ Sports</div>
+    <div class="card" onclick="startGame('mixed')">🧠 Mixed</div>
+  </div>
+</section>
+
+<!-- GAME -->
+<section class="scene" id="game">
+  <div class="header">
+    <div>⏱ <span id="time">0</span></div>
+    <div>❤️ <span id="lives">0</span></div>
+    <div>🔥 <span id="streak">0</span></div>
+    <div>🏆 <span id="score">0</span></div>
+  </div>
+  <h2 id="question"></h2>
+  <div class="options" id="options"></div>
+</section>
+
+<!-- WIN -->
+<section class="scene" id="win">
+  <h1>VICTORY</h1>
+  <p id="finalScore"></p>
+</section>
+
+<!-- LOSE -->
+<section class="scene" id="lose">
+  <h1>DEFEAT</h1>
+  <p>Try a different category or difficulty.</p>
+</section>
+
+<script>
+/* ================= SCENE CONTROL ================= */
+const scenes=document.querySelectorAll(".scene");
+function go(id){
+  scenes.forEach(s=>s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+setTimeout(()=>go("intro"),2200);
+
+/* ================= DIFFICULTY ================= */
+let mode={};
+function setMode(m){
+  if(m==="beginner") mode={time:15,lives:4,count:5};
+  if(m==="pro") mode={time:10,lives:3,count:7};
+  if(m==="master") mode={time:7,lives:2,count:10};
+  go("categories");
+}
+
+/* ================= KNOWLEDGE BASES ================= */
+/* Data is intentionally explicit so you can EXPAND it */
+const KB={
+  tech:{
+    HTML:"Hyper Text Markup Language",
+    CSS:"Cascading Style Sheets",
+    API:"Application Programming Interface",
+    DOM:"Document Object Model",
+    JSON:"JavaScript Object Notation"
+  },
+  gk:{
+    Earth:"Planet we live on",
+    India:"Country in South Asia",
+    Sun:"Star of our solar system",
+    Water:"Essential for life",
+    Time:"Measured in seconds"
+  },
+  science:{
+    Atom:"Smallest unit of matter",
+    Gravity:"Force of attraction",
+    Energy:"Ability to do work",
+    Cell:"Basic unit of life",
+    Oxygen:"Gas needed to breathe"
+  },
+  math:{
+    Pi:"Approximately 3.14",
+    Prime:"Divisible only by 1 and itself",
+    Square:"Number multiplied by itself",
+    Sum:"Result of addition",
+    Angle:"Measured in degrees"
+  },
+  history:{
+    Gandhi:"Indian freedom leader",
+    Rome:"Ancient empire",
+    WW2:"World War II",
+    Ashoka:"Mauryan emperor",
+    Egypt:"Ancient civilization"
+  },
+  geo:{
+    Asia:"Largest continent",
+    Nile:"Longest river",
+    Everest:"Highest mountain",
+    Sahara:"Largest hot desert",
+    Pacific:"Largest ocean"
+  },
+  movies:{
+    Titanic:"Ship disaster film",
+    Avatar:"Pandora world movie",
+    Inception:"Dream-based film",
+    Matrix:"Virtual reality movie",
+    Jaws:"Shark movie"
+  },
+  music:{
+    Guitar:"String instrument",
+    Rhythm:"Pattern of sound",
+    Beethoven:"Classical composer",
+    Melody:"Sequence of notes",
+    Tempo:"Speed of music"
+  },
+  sports:{
+    Cricket:"Bat and ball game",
+    Football:"Team sport",
+    Olympics:"Global sports event",
+    Tennis:"Racket sport",
+    Hockey:"Stick and ball game"
+  }
+};
+
+/* ================= PROCEDURAL QUESTION ENGINE ================= */
+function shuffle(arr){return arr.sort(()=>Math.random()-0.5);}
+
+function generateQuestion(category){
+  let base;
+  if(category==="mixed"){
+    const cats=Object.keys(KB);
+    base=KB[cats[Math.floor(Math.random()*cats.length)]];
+  }else{
+    base=KB[category];
+  }
+
+  const keys=Object.keys(base);
+  const key=keys[Math.floor(Math.random()*keys.length)];
+  const correct=base[key];
+
+  const wrong=shuffle(
+    Object.values(base).filter(v=>v!==correct)
+  ).slice(0,2);
+
+  const options=shuffle([correct,...wrong]);
+
+  return{
+    q:`What is ${key}?`,
+    a:options,
+    c:options.indexOf(correct),
+    e:`${key} → ${correct}`
+  };
+}
+
+function generateQuiz(category,count){
+  const list=[];
+  while(list.length<count){
+    list.push(generateQuestion(category));
+  }
+  return list;
+}
+
+/* ================= GAME LOGIC ================= */
+let questions=[],index=0,timer,timeLimit,lives,streak,score;
+
+function startGame(category){
+  questions=generateQuiz(category,mode.count);
+  index=0;
+  lives=mode.lives;
+  streak=0;
+  score=0;
+  timeLimit=mode.time;
+  updateUI();
+  go("game");
+  loadQ();
+}
+
+function loadQ(){
+  if(index>=questions.length){end(true);return;}
+  clearInterval(timer);
+  let t=timeLimit;
+  time.textContent=t;
+
+  timer=setInterval(()=>{
+    t--;
+    time.textContent=t;
+    if(t<=0)timeout();
+  },1000);
+
+  const q=questions[index];
+  question.textContent=q.q;
+  options.innerHTML="";
+  const exp=document.createElement("p");
+
+  q.a.forEach((opt,i)=>{
+    const b=document.createElement("button");
+    b.textContent=opt;
+    b.onclick=()=>answer(i,b,exp);
+    options.appendChild(b);
+  });
+  options.appendChild(exp);
+}
+
+function answer(i,b,exp){
+  clearInterval(timer);
+  const q=questions[index];
+  if(i===q.c){
+    b.classList.add("correct");
+    streak++;
+    score+=10*streak;
+    exp.textContent="✅ "+q.e;
+  }else{
+    b.classList.add("wrong");
+    streak=0;
+    lives--;
+    exp.textContent="❌ "+q.e;
+  }
+  updateUI();
+  setTimeout(()=>{lives<=0?end(false):(index++,loadQ())},1600);
+}
+
+function timeout(){
+  lives--;
+  streak=0;
+  updateUI();
+  lives<=0?end(false):(index++,loadQ());
+}
+
+function updateUI(){
+  livesEl.textContent=lives;
+  streakEl.textContent=streak;
+  scoreEl.textContent=score;
+}
+
+function end(win){
+  clearInterval(timer);
+  finalScore.textContent="Final Score: "+score;
+  go(win?"win":"lose");
+  setTimeout(()=>go("modes"),3000);
+}
+
+const livesEl=document.getElementById("lives");
+const streakEl=document.getElementById("streak");
+const scoreEl=document.getElementById("score");
+</script>
+
+</body>
+</html>
